@@ -108,7 +108,7 @@ class CeskaTelevizeIE(InfoExtractor):
 
         for user_agent in (None, USER_AGENTS['Safari']):
             req = sanitized_Request(
-                'https://www.ceskatelevize.cz/ivysilani/ajax/get-client-playlist',
+                'https://www.ceskatelevize.cz/ivysilani/ajax/get-client-playlist/',
                 data=urlencode_postdata(data))
 
             req.add_header('Content-type', 'application/x-www-form-urlencoded')
@@ -239,7 +239,7 @@ class CeskaTelevizeIE(InfoExtractor):
 
 
 class CeskaTelevizePoradyIE(InfoExtractor):
-    _VALID_URL = r'https?://(?:www\.)?ceskatelevize\.cz/porady/(?:[^/?#&]+/)*(?P<id>[^/#?]+)'
+    _VALID_URL = r'https?://(?:www\.)?ceskatelevize\.cz/porady/(?:[^/?#&]+/)*(?P<id>[^\-/#?]+)'
     _TESTS = [{
         # video with 18+ caution trailer
         'url': 'http://www.ceskatelevize.cz/porady/10520528904-queer/215562210900007-bogotart/',
@@ -279,11 +279,13 @@ class CeskaTelevizePoradyIE(InfoExtractor):
 
         webpage = self._download_webpage(url, video_id)
 
-        data_url = update_url_query(unescapeHTML(self._search_regex(
-            (r'<span[^>]*\bdata-url=(["\'])(?P<url>(?:(?!\1).)+)\1',
-             r'<iframe[^>]+\bsrc=(["\'])(?P<url>(?:https?:)?//(?:www\.)?ceskatelevize\.cz/ivysilani/embed/iFramePlayer\.php.*?)\1'),
-            webpage, 'iframe player url', group='url')), query={
-                'autoStart': 'true',
+        iframe_hash = self._download_webpage("https://www.ceskatelevize.cz/v-api/iframe-hash/", video_id)
+
+        data_url = update_url_query("https://www.ceskatelevize.cz/ivysilani/embed/iFramePlayer.php", {
+            'hash': iframe_hash,
+            'IDEC': video_id,
+            'origin': 'iVysilani',
+            'autoStart': 'true'
         })
 
         return self.url_result(data_url, ie=CeskaTelevizeIE.ie_key())
